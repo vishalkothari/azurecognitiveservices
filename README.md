@@ -1,12 +1,13 @@
 ---
-services: cognitive-services,speech 
+services: cognitive-services,speech, language understanding, text analytics
 platforms: dotnet
-author: priyaravi20
 ---
 
 # Microsoft Bing Speech API: Windows Speech-to-Text Sample
 This repo contains the Windows client library & sample for using Speech-to-Text in the Microsoft Bing Speech API, an offering within [Microsoft Cognitive Services](https://www.microsoft.com/cognitive-services), formerly known as Project Oxford.
 * [Learn about the Bing Speech API](https://www.microsoft.com/cognitive-services/en-us/speech-api)
+* [Learn about the Language understanding] https://azure.microsoft.com/en-in/services/cognitive-services/language-understanding-intelligent-service/
+* [Learn about the Text Analytics] https://azure.microsoft.com/en-in/services/cognitive-services/text-analytics/
 * [Read the documentation](https://www.microsoft.com/cognitive-services/en-us/speech-api/documentation/overview)
 * [Find more SDKs & Samples](https://www.microsoft.com/cognitive-services/en-us/SDK-Sample?api=bing%20speech)
 
@@ -39,6 +40,7 @@ This sample is a Windows WPF application to demonstrate the use of Speech-to-Tex
  5. Press Ctrl+Shift+B, or select `Build > Build Solution`.
 
 For intent recognition to work, you need to sign up [Language Understanding Intelligent Service (LUIS)](<https://www.microsoft.com/cognitive-services/en-us/sign-up>). Please put your LUIS App ID and Subscription ID in app.config file. app.config file can be located from Solution Explorer.
+For Text analytics to work, add text analytics key in MainWindow.xaml.cs
 
 <img src="SampleScreenshots/SampleRunning1.png" width="100%"/>
 
@@ -51,22 +53,3 @@ Locate the text edit box saying "Paste your subscription key here to start" on t
 
 Microsoft will receive the audio you upload and may use them to improve the Bing Speech API and related services. By submitting an audio, you confirm you have consent from everyone in it.
 
-## Contributing
-We welcome contributions. Feel free to file issues and pull requests on the repo and we'll address them as we can. Learn more about how you can help on our [Contribution Rules & Guidelines](</CONTRIBUTING.md>). 
-
-You can reach out to us anytime with questions and suggestions using our communities below:
- - **Support questions:** [StackOverflow](<https://stackoverflow.com/questions/tagged/microsoft-cognitive>)
- - **Feedback & feature requests:** [Cognitive Services UserVoice Forum](<https://cognitive.uservoice.com>)
-
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
-
-
-## License
-All Microsoft Cognitive Services SDKs and samples are licensed with the MIT License. For more details, see
-[LICENSE](</LICENSE.md>).
-
-Sample images are licensed separately, please refer to [LICENSE-IMAGE](</LICENSE-IMAGE.md>).
-
-
-## Developer Code of Conduct
-Developers using Cognitive Services, including this client library & sample, are expected to follow the “Developer Code of Conduct for Microsoft Cognitive Services”, found at [http://go.microsoft.com/fwlink/?LinkId=698895](http://go.microsoft.com/fwlink/?LinkId=698895).
