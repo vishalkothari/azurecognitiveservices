@@ -51,5 +51,3 @@ First, you must obtain a Speech API subscription key by [following the instructi
 
 Locate the text edit box saying "Paste your subscription key here to start" on the top right corner. Paste your subscription key. You can choose to persist your subscription key in your machine by clicking "Save Key" button. When you want to delete the subscription key from the machine, click "Delete Key" to remove it from your machine.
 
-Microsoft will receive the audio you upload and may use them to improve the Bing Speech API and related services. By submitting an audio, you confirm you have consent from everyone in it.
-
