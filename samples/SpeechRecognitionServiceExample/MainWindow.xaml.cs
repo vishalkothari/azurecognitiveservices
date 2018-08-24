@@ -41,6 +41,10 @@ namespace Microsoft.CognitiveServices.SpeechRecognition
     using System.IO.IsolatedStorage;
     using System.Runtime.CompilerServices;
     using System.Windows;
+    using Microsoft.Azure.CognitiveServices.Language.TextAnalytics;
+    using Microsoft.Azure.CognitiveServices.Language.TextAnalytics.Models;
+    using System.Collections.Generic;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -72,6 +76,22 @@ namespace Microsoft.CognitiveServices.SpeechRecognition
         /// The microphone client
         /// </summary>
         private MicrophoneRecognitionClient micClient;
+
+
+        private ITextAnalyticsAPI textAnalyticsClient;
+
+        public class Intent
+        {
+            public string intent { get; set; }
+            public double score { get; set; }
+        }
+
+        public class LUISRootObject
+        {
+            public string query { get; set; }
+            public List<Intent> intents { get; set; }
+            public List<object> entities { get; set; }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MainWindow"/> class.
@@ -238,9 +258,13 @@ namespace Microsoft.CognitiveServices.SpeechRecognition
         /// </value>
         private string DefaultLocale
         {
-            get { return "en-US"; }
+            get { return "en-IN"; }
         }
 
+        private string DefaultUSLocale
+        {
+            get { return "en-US"; }
+        }
         /// <summary>
         /// Gets the short wave file path.
         /// </summary>
@@ -427,6 +451,7 @@ namespace Microsoft.CognitiveServices.SpeechRecognition
             else if (this.Mode == SpeechRecognitionMode.LongDictation)
             {
                 this.micClient.OnResponseReceived += this.OnMicDictationResponseReceivedHandler;
+                this.micClient.OnIntent += this.OnIntentHandler;
             }
 
             this.micClient.OnConversationError += this.OnConversationErrorHandler;
@@ -476,7 +501,7 @@ namespace Microsoft.CognitiveServices.SpeechRecognition
         {
             this.dataClient = SpeechRecognitionServiceFactory.CreateDataClient(
                 this.Mode,
-                this.DefaultLocale,
+                this.DefaultUSLocale,
                 this.SubscriptionKey);
             this.dataClient.AuthenticationUri = this.AuthenticationUri;
 
@@ -572,9 +597,57 @@ namespace Microsoft.CognitiveServices.SpeechRecognition
                 this.micClient.EndMicAndRecognition();
 
                 this.WriteResponseResult(e);
-
                 _startButton.IsEnabled = true;
                 _radioGroup.IsEnabled = true;
+                if (e.PhraseResponse == null || e.PhraseResponse.Results.Length <= 0)
+                {
+                    return;
+                }
+                //call sentiment analysis
+                if (this.textAnalyticsClient == null)
+                {
+                    this.textAnalyticsClient = new TextAnalyticsAPI();
+                    this.textAnalyticsClient.AzureRegion = AzureRegions.Southeastasia;
+                    this.textAnalyticsClient.SubscriptionKey = "<yourkey>";
+                    Console.WriteLine("api init done");
+                }
+                SentimentBatchResult result3 = this.textAnalyticsClient.Sentiment(
+                    new MultiLanguageBatchInput(
+                        new List<MultiLanguageInput>()
+                        {
+                        new MultiLanguageInput("en", "0", e.PhraseResponse.Results[0].DisplayText),
+                        }));
+
+
+                // Printing sentiment results
+                foreach (var document in result3.Documents)
+                {
+                    //this.WriteLine("Document ID: {0} , Sentiment Score: {1:0.00}", document.Id, document.Score);
+                    //string.Format("{0:P2}", document.Score)
+                    String sentiment = "";
+                    if (document.Score > 0 && document.Score < 0.1)
+                    {
+                        sentiment = "Dissatisfied";
+                        this.WriteKnowledgeBaseLine("Please re-assure the customer that they are important. Check about exact customer requirements and offer to check with supervisor.");
+                    }
+                    else if (document.Score >= 0.1 && document.Score < 0.6)
+                    {
+                        sentiment = "Neutral";
+                    }
+                    else if (document.Score >= 0.6 && document.Score < 0.8)
+                    {
+                        sentiment = "Positive";
+                    }
+                    else if (document.Score >= 0.8 && document.Score < 1)
+                    {
+                        sentiment = "Delighted";
+                    }
+                    Dispatcher.Invoke(() =>
+                    {
+                        _SentimentText.Text = sentiment + " - " + string.Format("{0:P2}", document.Score);
+                    });
+                }
+
             }));
         }
 
@@ -685,9 +758,63 @@ namespace Microsoft.CognitiveServices.SpeechRecognition
         /// <param name="e">The <see cref="SpeechIntentEventArgs"/> instance containing the event data.</param>
         private void OnIntentHandler(object sender, SpeechIntentEventArgs e)
         {
+            Console.WriteLine("in intent handler");
             this.WriteLine("--- Intent received by OnIntentHandler() ---");
-            this.WriteLine("{0}", e.Payload);
-            this.WriteLine();
+            //this.WriteLine("{0}", e.Payload);
+            //this.WriteLine();
+
+            //TODO call output dialog
+            /*
+            JavaScriptSerializer json_serializer = new JavaScriptSerializer();
+            LUISResponse luisResponse =
+                   (LUISResponse)json_serializer.DeserializeObject(e.Payload);
+                   */
+            Console.WriteLine("before deserialize");
+
+            LUISRootObject result = JsonConvert.DeserializeObject<LUISRootObject>(e.Payload);
+            Console.WriteLine("after deserialize");
+            if (result != null && result.intents != null && result.intents.Count > 0)
+            {
+                Intent firstIntent = result.intents[0];
+                this.WriteLine("First intent detected:" + firstIntent.intent);
+                Console.WriteLine("after first intent");
+                if (firstIntent.intent.Equals("Get.LoanEligibility") && firstIntent.score > 0.6) {
+                    Console.WriteLine("in loan eligibility");
+                    this.WriteLine("Loan eligibility intent");
+                    this.WriteKnowledgeBaseLine("Loan eligibility for this customer is $ 300,000");
+                    this.WriteKnowledgeBaseLine("\n");
+                    this.WriteProductRecommendationLine("This customer is eligible for premium loan product.");
+                    this.WriteProductRecommendationLine("\n");
+                }
+                else if (firstIntent.intent.Equals("TransactionCharge") && firstIntent.score > 0.6)
+                {
+                    Console.WriteLine("in transaction charge");
+                    this.WriteKnowledgeBaseLine("This customer regularly transfers forex.");
+                    this.WriteKnowledgeBaseLine("This customer had raised a case about high transaction charges 1 month back.");
+                    this.WriteKnowledgeBaseLine("Ask about the transaction amount and charge is as below");
+                    this.WriteKnowledgeBaseLine("3.5% for $100000 to $20000");
+                    this.WriteKnowledgeBaseLine("2.5% for $200001 to $50000");
+                    this.WriteKnowledgeBaseLine("2% for $500001 to $80000");
+                    this.WriteKnowledgeBaseLine("\n");
+                    this.WriteProductRecommendationLine("This customer is eligible for Gold Forex card.");
+                    this.WriteProductRecommendationLine("\n");
+                }
+                else if (firstIntent.intent.Equals("NewCreditCard") && firstIntent.score > 0.6)
+                {
+                    this.WriteKnowledgeBaseLine("You can ask customer to apply through Citi bank online site or through Citi bank branch.");
+                    this.WriteKnowledgeBaseLine("\n");
+                    this.WriteProductRecommendationLine("This customer is eligible for Citigold card.");
+                    this.WriteProductRecommendationLine("You can offer document pickup to this customer.");
+                    this.WriteProductRecommendationLine("\n");
+                }
+                else if (firstIntent.intent.Equals("AccountBalance") && firstIntent.score > 0.6)
+                {
+                    this.WriteKnowledgeBaseLine("Your account balance is $200,000");
+                    this.WriteKnowledgeBaseLine("\n");
+                    this.WriteProductRecommendationLine("You can offer customer to invest in Fixed deposits or Liquid funds.");
+                    this.WriteProductRecommendationLine("\n");
+                }
+            }
         }
 
         /// <summary>
@@ -697,9 +824,10 @@ namespace Microsoft.CognitiveServices.SpeechRecognition
         /// <param name="e">The <see cref="PartialSpeechResponseEventArgs"/> instance containing the event data.</param>
         private void OnPartialResponseReceivedHandler(object sender, PartialSpeechResponseEventArgs e)
         {
-            this.WriteLine("--- Partial result received by OnPartialResponseReceivedHandler() ---");
-            this.WriteLine("{0}", e.PartialResult);
-            this.WriteLine();
+            //this.WriteLine("--- Partial result received by OnPartialResponseReceivedHandler() ---");
+            //this.WriteLine("{0}", e.PartialResult);
+            //this.WriteLine();
+
         }
 
         /// <summary>
@@ -762,6 +890,38 @@ namespace Microsoft.CognitiveServices.SpeechRecognition
             {
                 _logText.Text += (formattedStr + "\n");
                 _logText.ScrollToEnd();
+            });
+        }
+
+        /// <summary>
+        /// Writes the line to knowledge base box.
+        /// </summary>
+        /// <param name="format">The format.</param>
+        /// <param name="args">The arguments.</param>
+        private void WriteKnowledgeBaseLine(string format, params object[] args)
+        {
+            var formattedStr = string.Format(format, args);
+            Trace.WriteLine(formattedStr);
+            Dispatcher.Invoke(() =>
+            {
+                _knowledgeText.Text += (formattedStr + "\n");
+                _knowledgeText.ScrollToEnd();
+            });
+        }
+
+        /// <summary>
+        /// Writes the line to knowledge base box.
+        /// </summary>
+        /// <param name="format">The format.</param>
+        /// <param name="args">The arguments.</param>
+        private void WriteProductRecommendationLine(string format, params object[] args)
+        {
+            var formattedStr = string.Format(format, args);
+            Trace.WriteLine(formattedStr);
+            Dispatcher.Invoke(() =>
+            {
+                _recoText.Text += (formattedStr + "\n");
+                _recoText.ScrollToEnd();
             });
         }
 
@@ -880,6 +1040,8 @@ namespace Microsoft.CognitiveServices.SpeechRecognition
             }
 
             this._logText.Text = string.Empty;
+            this._recoText.Text = string.Empty;
+            this._knowledgeText.Text = string.Empty;
             this._startButton.IsEnabled = true;
             this._radioGroup.IsEnabled = true;
         }
