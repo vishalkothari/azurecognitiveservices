@@ -6,8 +6,8 @@ platforms: dotnet
 # Microsoft Cognitive Services Sample
 This repo contains the Windows client library & sample for using Speech-to-Text in the Microsoft Bing Speech API, an offering within [Microsoft Cognitive Services](https://www.microsoft.com/cognitive-services), formerly known as Project Oxford.
 * [Learn about the Bing Speech API](https://www.microsoft.com/cognitive-services/en-us/speech-api)
-* [Learn about the Language understanding] https://azure.microsoft.com/en-in/services/cognitive-services/language-understanding-intelligent-service/
-* [Learn about the Text Analytics] https://azure.microsoft.com/en-in/services/cognitive-services/text-analytics/
+* [Learn about the Language understanding] (https://azure.microsoft.com/en-in/services/cognitive-services/language-understanding-intelligent-service/)
+* [Learn about the Text Analytics] (https://azure.microsoft.com/en-in/services/cognitive-services/text-analytics/)
 * [Read the documentation](https://www.microsoft.com/cognitive-services/en-us/speech-api/documentation/overview)
 * [Find more SDKs & Samples](https://www.microsoft.com/cognitive-services/en-us/SDK-Sample?api=bing%20speech)
 
